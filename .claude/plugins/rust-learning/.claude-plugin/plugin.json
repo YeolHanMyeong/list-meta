@@ -1,6 +1,0 @@
-{
-  "name": "rust-learning",
-  "version": "1.0.0",
-  "description": "list-meta 프로젝트를 통한 Rust 학습 보조 플러그인. 코드를 대신 작성하지 않고, 힌트와 리뷰로 학습을 유도한다.",
-  "keywords": ["rust", "learning", "mentor", "code-review"]
-}
