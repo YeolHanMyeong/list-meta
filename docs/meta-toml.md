@@ -21,7 +21,7 @@
 ```toml
 # project/.meta.toml
 [folder]
-description = "프로젝트 루트 폴더"
+"description" = "프로젝트 루트 폴더"
 
 [file]
 "README.md" = "프로젝트 설명 문서"
@@ -31,7 +31,7 @@ description = "프로젝트 루트 폴더"
 ```toml
 # project/src/.meta.toml
 [folder]
-description = "소스 코드 디렉토리"
+"description" = "소스 코드 디렉토리"
 
 [file]
 "main.rs" = "Rust 엔트리포인트"
