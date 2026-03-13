@@ -1,6 +1,5 @@
 use std::{ffi::OsString, fs::{self, DirEntry, Metadata}, os::unix::fs::{MetadataExt, PermissionsExt}, usize};
 use clap::Parser;
-use toml::Value;
 use users::{get_user_by_uid, get_group_by_gid};
 use colored::{ColoredString, Colorize};
 
@@ -12,7 +11,7 @@ struct Args {
 
 struct Line {
     is_dir: bool,
-    permssion: String,
+    permission: String,
     nlink: String,
     owner_user: String,
     owner_group: String,
@@ -46,23 +45,24 @@ fn get_owner_group(meta_data: &Metadata) -> String {
     get_group_by_gid(meta_data.gid()).map(|group| group.name().to_string_lossy().to_string()).unwrap_or_default()
 }
 
-fn display_dir(root_path: &String) -> std::io::Result<()> {
-    let mut paths : Vec<_> = fs::read_dir(root_path).unwrap().map(|r| r.unwrap()).collect();
+fn display_dir(root_path: &str) -> std::io::Result<()> {
+    //let mut paths : Vec<_> = fs::read_dir(root_path).unwrap().map(|r| r.unwrap()).collect();
+    let mut paths: Vec<_> = fs::read_dir(root_path)?
+        .filter_map(|r| r.ok())
+        .collect();
     paths.sort_by_key(|dir| dir.path());
-    let mut lines : Vec<Line> = vec![];
-    let mut max_file_len : usize = 0;
-    let mut max_nlink_len : usize = 0;
     let value: Option<toml::Value>;
 
     let meta_file = fs::read_to_string(".meta.toml").unwrap_or_default();
     value = toml::from_str::<toml::Value>(&meta_file).ok();
     
-    
-    for path in paths{
-        lines.push(get_new_line(path, root_path, &value, &mut max_file_len, &mut max_nlink_len));
-    }
-    
-    
+    let lines: Vec<Line> = paths.iter()
+        .filter_map(|p| build_line(p, root_path, &value))
+        .collect();
+
+    let max_file_len = lines.iter().map(|line| line.name.len()).max().unwrap_or(0);
+    let max_nlink_len = lines.iter().map(|line| line.nlink.len()).max().unwrap_or(0);
+
     for line in lines {
         print_line(line, &max_file_len, &max_nlink_len);
     }
@@ -73,7 +73,7 @@ fn display_dir(root_path: &String) -> std::io::Result<()> {
 
 fn print_line(line: Line, max_file_len: &usize, max_nlink_len: &usize) {
     let is_dir = line.is_dir;
-    let permission = line.permssion;
+    let permission = line.permission;
     let mut nlink = line.nlink;
     let user_name = line.owner_user;
     let group_name = line.owner_group;
@@ -102,7 +102,7 @@ fn print_line(line: Line, max_file_len: &usize, max_nlink_len: &usize) {
     println!("{permission} {nlink} {user_name} {group_name} {colored_file_name} {colored_description}")
 }
 
-fn get_folder_description(folder_path:&String, name:&String) -> String {
+fn get_folder_description(folder_path:&str, name:&str) -> String {
     let folder_path = format!("{folder_path}/{name}");
     let result: String;
 
@@ -114,50 +114,33 @@ fn get_folder_description(folder_path:&String, name:&String) -> String {
     .unwrap_or("")
     .to_string();
 
-    if result != "" {
-        format!("<--{result}")
-    }else {format!("")}
+    if result.is_empty() { String::new() }
+    else { format!("<--{result}") }
     
 }
 
-fn get_new_line(path: DirEntry,root_path:&String, value: &Option<Value> , max_file_len: &mut usize, max_nlink_len: &mut usize) -> Line {
-    let name = path.file_name();
-    let meta_data = fs::metadata(&name).unwrap();
+fn build_line(entry: &DirEntry, root_path: &str, meta: &Option<toml::Value>) -> Option<Line> {
+    let meta_data = fs::metadata(entry.file_name()).ok()?;
+
+    let name = entry.file_name();
     let permission = get_permission(&meta_data).unwrap();
     let nlink = meta_data.nlink().to_string();
     let user_name: String = get_owner_user(&meta_data);
     let group_name: String = get_owner_group(&meta_data);
     let is_dir = meta_data.is_dir();
     let display_name = name.display().to_string();
-    let name_len = display_name.len();
-    let nlink_len = nlink.len();
     
     let description: String;
     if is_dir{
         description = get_folder_description(&root_path, &display_name);
     }
     else {
-        description = get_file_description(&name, &value);
+        description = get_file_description(&name, &meta);
     }
 
-    let line: Line = Line {is_dir: is_dir, permssion: permission, nlink: nlink,owner_user: user_name, owner_group: group_name, name: display_name, description: description };
+    let line: Line = Line {is_dir: is_dir, permission, nlink: nlink,owner_user: user_name, owner_group: group_name, name: display_name, description: description };
 
-    
-    match *max_file_len < name_len {
-        true => {
-            *max_file_len = name_len;
-        }
-        false => (),
-    }
-
-    match *max_nlink_len < nlink_len {
-        true => {
-            *max_nlink_len = nlink_len;
-        }
-        false => (),
-    }
-
-    line
+    Some(line)
 }
 
 fn get_file_description(file_name:&OsString, value:&Option<toml::Value>) -> String {
