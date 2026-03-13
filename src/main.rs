@@ -31,7 +31,7 @@ fn format_permissions(mode: &u32) -> String {
 }
 
 fn get_permission(meta_data: &Metadata) -> std::io::Result<String> {
-        let file_type = get_file_type(&meta_data);
+        let file_type = get_content_type(&meta_data);
         let permissions = meta_data.permissions();
         let permission_mode = format_permissions(&permissions.mode());
         Ok(format!("{file_type}{permission_mode}"))
@@ -60,36 +60,36 @@ fn display_dir(root_path: &str) -> std::io::Result<()> {
         .filter_map(|p| build_line(p, root_path, &value))
         .collect();
 
-    let max_file_len = lines.iter().map(|line| line.name.len()).max().unwrap_or(0);
+    let max_name_len = lines.iter().map(|line| line.name.len()).max().unwrap_or(0);
     let max_nlink_len = lines.iter().map(|line| line.nlink.len()).max().unwrap_or(0);
 
     for line in lines {
-        print_line(line, &max_file_len, &max_nlink_len);
+        print_line(line, &max_name_len, &max_nlink_len);
     }
     
     Ok(())
 
 }
 
-fn print_line(line: Line, max_file_len: &usize, max_nlink_len: &usize) {
+fn print_line(line: Line, max_name_len: &usize, max_nlink_len: &usize) {
     let is_dir = line.is_dir;
     let permission = line.permission;
     let mut nlink = line.nlink;
     let user_name = line.owner_user;
     let group_name = line.owner_group;
-    let mut file_name: String = line.name;
+    let mut name: String = line.name;
     let description = line.description;
 
-    if max_file_len > &file_name.len() {
-        let width = max_file_len - file_name.len();
-        file_name = format!("{:<width$}{file_name}", " ");
+    if max_name_len > &name.len() {
+        let width = max_name_len - name.len();
+        name = format!("{:<width$}{name}", " ");
     }
 
-    let colored_file_name: ColoredString;
+    let colored_name: ColoredString;
     if is_dir {
-        colored_file_name = format!("{file_name}").white().bold();
+        colored_name = format!("{name}").white().bold();
     } else {
-        colored_file_name = file_name.normal();
+        colored_name = name.normal();
     }
 
     if max_nlink_len > &nlink.len() {
@@ -99,7 +99,7 @@ fn print_line(line: Line, max_file_len: &usize, max_nlink_len: &usize) {
     
     let colored_description = format!("{description}").to_string().italic().cyan();
     
-    println!("{permission} {nlink} {user_name} {group_name} {colored_file_name} {colored_description}")
+    println!("{permission} {nlink} {user_name} {group_name} {colored_name} {colored_description}")
 }
 
 fn get_folder_description(folder_path:&str, name:&str) -> String {
@@ -143,10 +143,10 @@ fn build_line(entry: &DirEntry, root_path: &str, meta: &Option<toml::Value>) -> 
     Some(line)
 }
 
-fn get_file_description(file_name:&OsString, value:&Option<toml::Value>) -> String {
+fn get_file_description(name:&OsString, value:&Option<toml::Value>) -> String {
     
     let result: String = value.as_ref().and_then(|v| v.get("file"))
-    .and_then(|t| t.get(file_name.to_string_lossy().to_string()))
+    .and_then(|t| t.get(name.to_string_lossy().to_string()))
     .and_then(|d| d.as_str())
     .unwrap_or("")
     .to_string();
@@ -158,7 +158,7 @@ fn get_file_description(file_name:&OsString, value:&Option<toml::Value>) -> Stri
     }
 }
 
-fn get_file_type(meta_data: &Metadata) -> String{
+fn get_content_type(meta_data: &Metadata) -> String{
     if meta_data.is_dir() {
         "d".to_string()
     } else if meta_data.is_file() {
