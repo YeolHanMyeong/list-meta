@@ -153,5 +153,5 @@ fn print_line(line: Line, max_name_len: &usize, max_nlink_len: &usize) {
     
     let colored_description = format!("{description}").to_string().italic().cyan();
     
-    println!("{permission} {nlink} {user_name} {group_name} {colored_name} {colored_description}")
+    println!("▸ {permission} {nlink} {user_name} {group_name} {colored_name} {colored_description}")
 }
