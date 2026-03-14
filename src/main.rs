@@ -66,7 +66,7 @@ fn build_line(entry: &DirEntry, root_path: &str, meta: &Option<toml::Value>) -> 
     if is_dir{description = load_folder_description(&root_path, &display_name);}
     else {description = file_description(&name, &meta);}
 
-    if !description.is_empty(){description = format!("<--{description}");}
+    if !description.is_empty(){description = format!("← {description}");}
 
     let line: Line = Line {is_dir: is_dir, permission, nlink: nlink,owner_user: user_name, owner_group: group_name, name: display_name, description: description };
 
@@ -78,7 +78,7 @@ fn load_folder_description(folder_path:&str, name:&str) -> String {
     let result: String;
     let meta_file = fs::read_to_string(format!("{folder_path}/.meta.toml")).unwrap_or_default();
     let value = toml::from_str::<toml::Value>(&meta_file).ok();
-    
+
     result = value.as_ref().and_then(|v| v.get("folder"))
     .and_then(|t| t.get("description"))
     .and_then(|d| d.as_str())
@@ -136,7 +136,7 @@ fn print_line(line: Line, max_name_len: &usize, max_nlink_len: &usize) {
 
     if max_name_len > &name.len() {
         let width = max_name_len - name.len();
-        name = format!("{:<width$}", name);
+        name = format!("{:<width$}{name}","");
     }
 
     let colored_name: ColoredString;
@@ -148,7 +148,7 @@ fn print_line(line: Line, max_name_len: &usize, max_nlink_len: &usize) {
 
     if max_nlink_len > &nlink.len() {
         let width = max_nlink_len - nlink.len();
-        nlink =  format!("{:<width$}", nlink);
+        nlink =  format!("{:<width$}{nlink}", " ");
     }
     
     let colored_description = format!("{description}").to_string().italic().cyan();
