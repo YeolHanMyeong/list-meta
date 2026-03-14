@@ -78,6 +78,7 @@ fn load_folder_description(folder_path:&str, name:&str) -> String {
     let result: String;
     let meta_file = fs::read_to_string(format!("{folder_path}/.meta.toml")).unwrap_or_default();
     let value = toml::from_str::<toml::Value>(&meta_file).ok();
+    
     result = value.as_ref().and_then(|v| v.get("folder"))
     .and_then(|t| t.get("description"))
     .and_then(|d| d.as_str())
