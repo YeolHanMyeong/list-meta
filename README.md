@@ -12,16 +12,14 @@ cargo install --path .
 
 ```bash
 lm                    # 현재 디렉토리 목록 + 설명 출력
-lm --show-meta        # .meta.toml 파일도 목록에 표시
-lm --width 120        # 출력 너비 지정 (기본: 터미널 너비, 폴백: 80)
 ```
 
 ## 출력 예시
 
 ```
-drwxr-xr-x  3  elevn  staff  src         | 소스 코드 디렉토리
--rw-r--r--  1  elevn  staff  Cargo.toml  |
--rw-r--r--  1  elevn  staff  README.md   | 프로젝트 소개 문서
+drwxr-xr-x  3  elevn  staff  src         ← 소스 코드 디렉토리
+-rw-r--r--  1  elevn  staff  Cargo.toml
+-rw-r--r--  1  elevn  staff  README.md   ← 프로젝트 소개 문서
 ```
 
 파일 정보와 설명은 `|` 구분자로 분리되며, 터미널에서는 설명 부분에 색상이 적용된다.
