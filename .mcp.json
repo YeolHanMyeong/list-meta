@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "excalidraw": {
+      "command": "node",
+      "args": [
+        "/Users/elevn/.npm/_npx/d29f25e29b61ea98/node_modules/@cmd8/excalidraw-mcp/dist/index.js",
+        "--diagram",
+        "/Users/elevn/projects/list-meta/diagram.excalidraw"
+      ]
+    }
+  }
+}

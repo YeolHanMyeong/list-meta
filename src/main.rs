@@ -1,13 +1,7 @@
 use std::{ffi::OsString, fs::{self, DirEntry, Metadata}, os::unix::fs::{MetadataExt, PermissionsExt}, usize};
-use clap::Parser;
 use users::{get_user_by_uid, get_group_by_gid};
 use colored::{ColoredString, Colorize};
-
-#[derive(Parser)]
-struct Args {
-    #[arg(long)]
-    show_meta: bool,
-}
+use std::env;
 
 struct Line {
     is_dir: bool,
@@ -20,8 +14,58 @@ struct Line {
 }
 
 fn main() -> std::io::Result<()>{
-    print_lines(&".".to_string())?;
+    let args: Vec<String> = env::args().collect();
+
+    let root_path = ".";
+
+    if args.is_empty(){
+        print_lines(&root_path.to_string())?;
+    }
+    else if !args[1].is_empty(){
+        let arg = args[1].clone();
+        if arg.eq("--comment") && !args[2].is_empty()
+        {
+            let value = args[2].clone();
+            let (entry_name, comment) = value.split_once("=")
+            .expect("잘못된 명령어: \"파일/파일명=설명\" 형태로 사용해 주세요.");
+        
+            write_entry_comment(&root_path, entry_name, comment)?;
+        }
+        else {
+            println!("잘못된 명령어")
+        }
+    }
+    
+    
     Ok(())
+}
+
+fn write_entry_comment(root_path: &str, entry_name: &str, comment: &str) -> std::io::Result<()>{
+    let meta_file_name = ".meta.toml";
+    let content: String;
+    content = fs::read_to_string(meta_file_name).unwrap_or_default();
+
+    let mut value = toml::from_str::<toml::Value>(&content)
+        .unwrap_or(toml::Value::Table(Default::default()));
+
+    let dir_entry = fs::read_dir(root_path).unwrap()
+    .filter_map(|r| r.ok())
+    .find(|r| r.file_name().eq(entry_name));
+
+    let file_table: &mut toml::Value;
+
+    if dir_entry.unwrap().file_type().unwrap().is_dir(){
+
+    } else{
+        file_table = value.as_table_mut().unwrap()
+            .entry("file")
+            .or_insert(toml::Value::Table(Default::default()));
+    
+    file_table.as_table_mut().unwrap().insert(entry_name.to_string(), toml::Value::String(comment.to_string()));
+    }
+
+    
+    fs::write(meta_file_name, toml::to_string(&value).unwrap())
 }
 
 fn print_lines(root_path: &str) -> std::io::Result<()> {
@@ -32,7 +76,7 @@ fn print_lines(root_path: &str) -> std::io::Result<()> {
 
     let value: Option<toml::Value>;
 
-    let meta_file = fs::read_to_string(".meta.toml").unwrap_or_default();
+    let meta_file = fs::read_to_string(".meta.toml")?;
     value = toml::from_str::<toml::Value>(&meta_file).ok();
     
     let lines: Vec<Line> = paths.iter()
@@ -49,7 +93,6 @@ fn print_lines(root_path: &str) -> std::io::Result<()> {
     Ok(())
 
 }
-
 
 fn build_line(entry: &DirEntry, root_path: &str, meta: &Option<toml::Value>) -> Option<Line> {
     let meta_data = fs::metadata(entry.file_name()).ok()?;

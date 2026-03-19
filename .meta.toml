@@ -1,5 +1,2 @@
-[folder]
-
 [file]
-"Cargo.lock" = "test"
 "TODO.md" = "todo list file"
